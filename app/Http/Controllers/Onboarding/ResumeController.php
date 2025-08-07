@@ -26,9 +26,8 @@ class ResumeController extends Controller
             return redirect(URL::signedRoute('onboarding.step2', ['token' => $token]));
         }
 
-        // Later: add more step tracking like company/subdomain, billing, etc.
+        $url = URL::signedRoute('onboarding.step3', ['token' => $session->token]);
 
-        return redirect()->route('onboarding.step3'); // Next step fallback
-    
+        return redirect($url);
     }
 }

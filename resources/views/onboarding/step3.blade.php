@@ -29,24 +29,24 @@
 
 @extends('layouts.onboarding')
 
-@section('title', 'Step 2 - Create Password')
-@section('heading', 'Step 2: Create Password')
+@section('title', 'Step 3 - Company Details')
+@section('heading', 'Step 3: Company Details')
 
 @section('content')
     <div class="container mx-auto p-4">
-    <form action="{{ route('onboarding.step2') }}" method="POST">
+    <form action="{{ route('onboarding.step3') }}" method="POST">
         @csrf
         <div class="mb-4">
-            <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-            <input type="password" id="password" name="password" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-            @error('password') <p class="error">{{ $message }}</p> @enderror
+            <label for="company_name" class="block text-sm font-medium text-gray-700">Company Name</label>
+            <input type="text" id="company_name" value="{{ old('company_name', $session->company_name ?? '') }}" name="company_name" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+            @error('company_name') <p class="error">{{ $message }}</p> @enderror
         </div>
         <div class="mb-4">
-            <label for="password_confirmation" class="block text-sm font-medium text-gray-700">Confirm Password</label>
-            <input type="password" id="password_confirmation" name="password_confirmation" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-            @error('password_confirmation') <p class="error">{{ $message }}</p>@enderror
+            <label for="subdomain" class="block text-sm font-medium text-gray-700">Subdomain</label>
+            <input type="text" id="subdomain" value="{{ old('subdomain', $session->subdomain ?? '') }}" name="subdomain" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+            @error('subdomain') <p class="error">{{ $message }}</p>@enderror
         </div>
-        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Continue to Step 3</button>
+        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Continue to Step 4</button>
     </form>
 </div>
 

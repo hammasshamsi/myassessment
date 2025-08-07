@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Step2Request;
 use App\Models\OnboardingSession;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\URL;
 
 
 class Step2Controller extends Controller
@@ -32,6 +33,8 @@ class Step2Controller extends Controller
         $session->update([
             'password' => Hash::make($request->input('password')),
         ]);
-        return redirect()->route('onboarding.step3');
+        $url = URL::signedRoute('onboarding.step3', ['token' => $session->token]);
+        return redirect($url);
+        // return redirect()->route('onboarding.step3');
     }
 }
