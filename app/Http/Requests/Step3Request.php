@@ -4,6 +4,8 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use App\Models\OnboardingSession;
+use App\Models\Tenant;
+
 
 class Step3Request extends FormRequest
 {
@@ -27,22 +29,22 @@ class Step3Request extends FormRequest
             'subdomain'=>[
                 'required',
                 'string',
-                'max:255',
-                'alpha_num',
-                'max:20',
+                'regex:/^[a-z0-9-]+$/', // lowercase,numbers,dash
+                'max:40',
                 function ($attribute, $value, $fail) {
-                    $reserved=['admin','user', 'login','dashboard', 'api', 'auth', 'web', 'app', 'home', 'support', 'contact','tenant','landlord','www','http','https','com','controller','model'];
-                    if(in_array(strtolower($value), $reserved)) {
-                        $fail("The Subdomain'{$value}' is reserved and cannot be used.");
+                    $normalized = strtolower(trim($value));
+                     if (in_array($normalized, config('reserved.subdomains'))) {
+                        $fail('This subdomain is reserved and cannot be used.');
+                        return;
                     }
                     $token = session('onboarding_token');
-                    $query = OnboardingSession::where('subdomain', $value);
-                    if ($token) {
-                        $query->where('token', '!=', $token);
-                    }
+                    $existsInSessions = OnboardingSession::where('subdomain', $value)
+                    ->when($token, fn($q) => $q->where('token', '!=', $token))
+                    ->exists();
 
-                    if ($query->exists()) {
-                        $fail("This subdomain is already taken.");
+                    $existsInTenants = Tenant::where('subdomain', $value)->exists();
+                    if ($existsInSessions || $existsInTenants) {
+                        $fail('The subdomain has already been taken.');
                     }
                 }
             ],

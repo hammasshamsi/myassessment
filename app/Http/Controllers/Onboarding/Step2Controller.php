@@ -17,24 +17,30 @@ class Step2Controller extends Controller
         if(!$request->hasValidSignature()){
             abort(403, 'Invalid or Expired Link.');
         }
-        $token = $request->query('token');
-        $session = OnboardingSession::where('token', $token)->firstorFail();
+        $token = $request->query('token') ?? session('onboarding_token');
+        if (! $token) {
+            return redirect()->route('onboarding.step1')
+                ->withErrors('Your onboarding session has expired. Please start again.');
+        }
+
         session(['onboarding_token' => $token]);
-        return view('onboarding.step2');
+        $session = OnboardingSession::where('token', $token)->firstorFail();
+        
+        return view('onboarding.step2', compact('session'));
     }
 
     public function store(Step2Request $request)
     {
+        $validated = $request->validated();
         $token = session('onboarding_token');
         if(!$token){
             abort(403, 'Invalid or Expired Session./nToken not found in session.');
         }
         $session = OnboardingSession::where('token', $token)->firstOrFail();
         $session->update([
-            'password' => Hash::make($request->input('password')),
+            'password' => Hash::make($validated['password']),
         ]);
         $url = URL::signedRoute('onboarding.step3', ['token' => $session->token]);
         return redirect($url);
-        // return redirect()->route('onboarding.step3');
     }
 }

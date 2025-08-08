@@ -37,13 +37,12 @@ class Step1Controller extends Controller
             OnboardingSession::where('token', $token)->first()
             : null;
         if ($session){
-            $session->update([
-                'full_name' => $validated['full_name'],
-                'email' => $validated['email'],
-            ]);
+            $session->update($validated);
+            // $session->update([
+            //     'full_name' => $validated['full_name'],
+            //     'email' => $validated['email'],
+            // ]);
 
-         //log
-         \Log::info('Update run');
         } else{
             $token = (string) Str::uuid();
 

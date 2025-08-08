@@ -34,16 +34,14 @@ class Step1Request extends FormRequest
 
                 function($attribute, $value, $fail) {
                     $currentToken = session('onboarding_token');
-                    $query = OnboardingSession::where('email', $value);
-                    if ($currentToken) {
-                        $query->where('token', '!=', $currentToken);
-                    }
-                    if ($query->exists()) {
+                    // checkin onboarding session -- ignore current session if resuming
+                    $existingSession = OnboardingSession::where('email', $value)
+                        ->when($currentToken, fn($q) => $q->where('token', '!=', $currentToken))
+                        ->exists();
+                    $existing_tenants = Tenant::where('email', $value)->exists();
+                    if ($existingSession || $existing_tenants) {
                         $fail('The email has already been taken.');
                     }
-                    // if(Tenant::where('subdomain',$value)->exists()) {
-                    //     $fail('The subdomain has already been taken.');
-                    // }
                 },
 
             ],

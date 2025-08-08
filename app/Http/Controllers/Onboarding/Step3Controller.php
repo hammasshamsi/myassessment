@@ -18,8 +18,12 @@ class Step3Controller extends Controller
         }
         // retoring session
         $token = $request->query('token');
-        $session = OnboardingSession::where('token', $token)->firstorFail();
+        if (! $token) {
+            return redirect()->route('onboarding.step1')
+                ->withErrors('Your onboarding session has expired. Please start again.');
+        }
         session(['onboarding_token' => $token]);
+        $session = OnboardingSession::where('token', $token)->firstorFail();
         return view('onboarding.step3', compact('session'));
 
     }

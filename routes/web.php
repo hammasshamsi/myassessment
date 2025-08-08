@@ -6,6 +6,7 @@ use App\Http\Controllers\Onboarding\Step1Controller;
 use App\Http\Controllers\Onboarding\Step2Controller;
 use App\Http\Controllers\Onboarding\Step3Controller;
 use App\Http\Controllers\Onboarding\Step4Controller;
+use App\Http\Controllers\Onboarding\Step5Controller;
 
 Route::get('/', function () {
     return view('welcome');
