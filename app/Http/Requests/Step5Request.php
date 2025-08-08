@@ -54,7 +54,7 @@ class Step5Request extends FormRequest
             }
 
             // Check duplicate subdomain/email in tenants
-            if (Tenant::where('subdomain', $session->subdomain)->exists()) {
+            if (Tenant::where('domain', $session->subdomain)->exists()) {
                 $validator->errors()->add('subdomain', 'This subdomain is already taken.');
                 $url = URL::signedRoute('onboarding.step4', ['token' => $session->token]);
                 return redirect($url);

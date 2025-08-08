@@ -7,6 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 class Tenant extends Model
 {
     protected $fillable = [
-        'name','subdomain','database','status'
+        'name','domain','database','status','email'
     ];
 }

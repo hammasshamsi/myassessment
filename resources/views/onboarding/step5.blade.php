@@ -27,7 +27,7 @@
         <div class="mb-4">
             <p><strong>Phone:</strong> {{$session->phone}}</p>
         </div>
-        <form method="POST" action="#">
+        <form method="POST" action="{{ route('onboarding.step5') }}">
             @csrf
             <button type="submit">Confirm & Provision Tenant</button>
         </form>

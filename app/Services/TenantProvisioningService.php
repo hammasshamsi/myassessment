@@ -11,17 +11,19 @@ class TenantProvisioningService
 {
     public function provision(OnboardingSession $session): Tenant
     {
-        // Idempotent: if tenant already exists, return it
-        $tenant = Tenant::where('subdomain', $session->subdomain)->first();
+        // idempotent: if tenant already exists, return it
+        $tenant = Tenant::where('domain', strtolower($session->subdomain))->first();
 
         if (! $tenant) {
             DB::beginTransaction();
             try {
                 $tenant = Tenant::create([
-                    'company_name' => $session->company_name,
-                    'subdomain'    => strtolower($session->subdomain),
+                    'name' => $session->company_name,
+                    'domain'    => strtolower($session->subdomain),
                     'email'        => $session->email,
-                    'provisioning_status' => 'pending',
+                    'database'     => 'tenant_' . strtolower($session->subdomain) . '_db',
+                    'status' => 'pending',
+
                 ]);
 
                 DB::commit();
@@ -31,7 +33,7 @@ class TenantProvisioningService
             }
         }
 
-        // Dispatch provisioning job (async)
+        // dispatch job
         ProvisionTenantJob::dispatch($tenant, $session)->onQueue('provisioning');
 
         return $tenant;

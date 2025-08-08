@@ -4,10 +4,14 @@ namespace App\Jobs;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
 use App\Models\OnboardingSession;
 use App\Models\Tenant;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class ProvisionTenantJob implements ShouldQueue
 {
@@ -18,7 +22,7 @@ class ProvisionTenantJob implements ShouldQueue
     /**
      * Create a new job instance.
      */
-    public function __construct()
+    public function __construct(Tenant $tenant, OnboardingSession $session)
     {
         $this->tenant = $tenant;
         $this->session = $session;
@@ -31,36 +35,63 @@ class ProvisionTenantJob implements ShouldQueue
     {
         try{
 
-            $this->tenant->update(['provisioning_status' => 'in_progress']);
+            $this->tenant->update(['status' => 'in_progress']);
 
-            // 1) Create isolated tenant DB
-            $dbName = 'tenant_' . $this->tenant->id . '_' . $this->tenant->subdomain;
+            $dbName = $this->tenant->database;
             DB::statement("CREATE DATABASE IF NOT EXISTS `$dbName`");
-
-            // 2) Run migrations for tenant
-            Artisan::call('tenants:migrate', ['--database' => $dbName]);
-
-            // 3) Seed initial user
-            DB::connection($dbName)->table('users')->insert([
-                'name' => $this->session->full_name,
-                'email' => $this->session->email,
-                'password' => $this->session->password, // should already be hashed
-                'created_at' => now(),
-                'updated_at' => now(),
+            
+            // dynamically configure tenant DB
+            config()->set("database.connections.tenant", [
+                'driver'    => 'mysql',
+                'host'      => env('DB_HOST'),
+                'port'      => env('DB_PORT', 3306),
+                'database'  => $dbName,
+                'username'  => env('DB_USERNAME'),
+                'password'  => env('DB_PASSWORD'),
+                'charset'   => 'utf8mb4',
+                'collation' => 'utf8mb4_unicode_ci',
             ]);
 
-            // 4) Apply default config
-            DB::connection($dbName)->table('settings')->insert([
+            DB::purge('tenant');
+            DB::reconnect('tenant');
+
+            Artisan::call('migrate', [
+                '--database' => 'tenant',
+                '--path'     => '/database/migrations/tenant',
+                '--force'    => true,
+            ]);
+
+            $existingUser = DB::connection('tenant')->table('users')->where('email', $this->session->email)->first();
+            if (! $existingUser) {
+                DB::connection('tenant')->table('users')->insert([
+                    'name'       => $this->session->full_name,
+                    'email'      => $this->session->email,
+                    'password'   => Hash::needsRehash($this->session->password)
+                        ? Hash::make($this->session->password)
+                        : $this->session->password,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+
+            $existingSettings = DB::connection('tenant')->table('settings')->pluck('key')->toArray();
+            $defaults = [
                 ['key' => 'timezone', 'value' => 'UTC'],
                 ['key' => 'locale', 'value' => 'en'],
-            ]);
+            ];
+
+            foreach ($defaults as $setting) {
+                if (! in_array($setting['key'], $existingSettings)) {
+                    DB::connection('tenant')->table('settings')->insert($setting);
+                }
+            }
 
             // Done
-            $this->tenant->update(['provisioning_status' => 'completed']);
+            $this->tenant->update(['status' => 'completed']);
 
         } catch (\Throwable $e) {
             Log::error("Tenant provisioning failed: {$e->getMessage()}", ['tenant_id' => $this->tenant->id]);
-            $this->tenant->update(['provisioning_status' => 'failed']);
+            $this->tenant->update(['status' => 'failed']);
             $this->fail($e);
         }
 
