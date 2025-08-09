@@ -1,13 +1,10 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Step 1 - Account Information</title>
-</head>
-<body>
+@extends('layouts.onboarding')
+
+@section('title', 'Step 1 - Acoount Information')
+@section('heading', 'Step 1: Account Information')
+
+@section('content')
 <div class="container mx-auto p-4">
-    <h1 class="text-2xl font-bold mb-4">Step 1: Account Information</h1>
     <form action="{{ route('onboarding.step1') }}" method="POST">
         @csrf
         <div class="mb-4">
@@ -23,5 +20,4 @@
         <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Continue to Step 2</button>
     </form>
 </div>
-</body>
-</html>
+@endsection
